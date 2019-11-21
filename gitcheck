@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import os
+import subprocess as sp
+import argparse
+import re
+
+def gitcheck(gitdir=''):
+
+    repo_list = os.listdir(gitdir)
+    check_list = []
+
+    for repo in repo_list:
+
+        # Check that the directory is in fact a repository
+        proc = sp.Popen('ls -a'.split(), cwd=os.path.join(gitdir,repo), stdout=sp.PIPE)
+        output, error = proc.communicate()
+        contents = output.decode("utf-8").split('\n')
+
+        if '.git' in contents:
+
+            # Check git diff
+            proc = sp.Popen('git diff master'.split(), cwd=os.path.join(gitdir,repo), stdout=sp.PIPE)
+            output, error = proc.communicate()
+            diff = output.decode("utf-8")
+
+            if diff: # Check emptyness
+                
+                check_list.append(repo)
+
+    if check_list: # Check emptiness
+
+        print("Check the following repositories for unmerged changes:")
+        [print('* '+repo) for repo in check_list]
+
+    else:
+
+        print('All repositories are up to date')
+
+def addgc(gitdir):
+
+    home = os.path.expanduser('~')
+    line = os.path.join(gitdir,'gitcheck/gitcheck')
+
+    proc = sp.Popen('cat .bashrc'.split(), cwd=home, stdout=sp.PIPE)
+    output, error = proc.communicate()
+    txt = output.decode("utf-8")
+
+    reg = re.findall(line, txt, re.MULTILINE)
+    if not reg:
+        with open(os.path.join(home,'.bashrc'), 'a') as f:
+            f.write(line+'\n')
+            f.close()
+        print('gitcheck added to bashrc')
+    else:
+        print('gitcheck is already in bashrc')
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Check currentness of git repositories')
+    parser.add_argument('-a', '--add', action='store_true',
+                        help='Add gitcheck to bashrc')
+    args = parser.parse_args()
+
+    gitdir = os.path.join(os.path.expanduser("~"), 'git')
+
+    if args.add:
+        addgc(gitdir)
+    else:
+        gitcheck(gitdir)
