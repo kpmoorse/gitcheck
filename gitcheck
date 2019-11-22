@@ -31,7 +31,8 @@ def gitcheck(gitdir=''):
     if check_list: # Check emptiness
 
         print("Check the following repositories for unmerged changes:")
-        [print('* '+repo) for repo in check_list]
+        for repo in check_list:
+            print('* '+repo)
 
     else:
 
